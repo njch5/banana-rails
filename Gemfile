@@ -49,3 +49,5 @@ gem "faker", "~> 2.7"
 gem "geocoder", "~> 1.5.2"
 
 gem "httparty", "~> 0.17.3"
+
+gem "aws-sdk-s3", require: false

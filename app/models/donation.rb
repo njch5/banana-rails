@@ -1,7 +1,8 @@
 class Donation < ApplicationRecord
 	belongs_to :donor
 	has_many :claims
-
+	has_one_attached :image
+	
 	validates :food_name, presence: true
 	validates :measurement, presence: true
 	validates :per_person, presence: true

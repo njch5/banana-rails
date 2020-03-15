@@ -2,11 +2,11 @@ require 'base64'
 
 class DonationsController < ApplicationController
 	skip_before_action :authorized, only: [:create]
-
+	
 	def index
-		render json: Donation.all
+		render json: Donation.all.with_attached_image
 	end
-
+	
 	def active
 		@active = Donation.all.select do |d|
 			# Check if each donation is still active based on the time it was created and its duration.
@@ -15,11 +15,11 @@ class DonationsController < ApplicationController
 		end
 		render json: @active
 	end
-
+	
 	def show
 		render json: Donation.find(params[:id])
 	end
-
+	
 	def create
 		@donation = Donation.new(donation_params)
 		if @donation.valid?
@@ -29,7 +29,7 @@ class DonationsController < ApplicationController
 			render json: { error: 'failed to create donation' }, status: :unprocessable_entity
 		end
 	end
-
+	
 	def update
 		id = params[:id].to_i
 		@donation = Donation.find(id)
@@ -40,17 +40,17 @@ class DonationsController < ApplicationController
 			render json: { error: 'failed to update donation' }, status: :unprocessable_entity
 		end
 	end
-
+	
 	def make_claim
 		donation_id = params[:id]
 		client_id = params[:client_id]
-
+		
 		# No multiple claims by one client on one donation
 		if Claim.find_by(donation_id: donation_id, client_id: client_id)
 			render json: { error: 'claim already exists for this client and donation' }, status: :unprocessable_entity
 			return
 		end
-
+		
 		qr_code = Base64.encode64({ 'client_id': params[:client_id], 'donation_id': params[:id] }.to_json).chomp
 		claim_params = {
 			client_id: params[:client_id],
@@ -68,9 +68,9 @@ class DonationsController < ApplicationController
 			render json: { error: 'failed to create claim' }, status: :unprocessable_entity
 		end
 	end
-
+	
 	private
-
+	
 	def donation_params
 		params.require(:donation).permit(
 			:id,
@@ -78,12 +78,13 @@ class DonationsController < ApplicationController
 			:donor_id,
 			:duration_minutes,
 			:food_name,
+			:image,
 			:image_url,
 			:measurement,
 			:per_person,
 			:pickup_location,
 			:start_time,
-			:total_servings
+			:total_servings,
 		)
 	end
 end

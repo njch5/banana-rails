@@ -1,6 +1,6 @@
 class DonorsController < ApplicationController
 	skip_before_action :authorized, only: [:create, :account_status]
-
+	
 	def get_donations
 		id = params[:id].to_i
 		authorized_id = decoded_token[0]['donor_id']
@@ -9,10 +9,12 @@ class DonorsController < ApplicationController
 			return
 		end
 		@donor = Donor.find(id)
-
-		render json: @donor.donations, include: 'claims', status: :ok
+		
+		# print url_for(Donation.find(1).image)
+		
+		render json: @donor.donations.with_attached_image, include: 'claims', status: :ok
 	end
-
+	
 	def create
 		@donor = Donor.create!(donor_params)
 		if @donor.valid?
@@ -23,15 +25,15 @@ class DonorsController < ApplicationController
 			render json: { error: 'failed to create donor' }, status: :unprocessable_entity
 		end
 	end
-
+	
 	def account_status
 		id = params[:id].to_i
 		status = params[:status]
-
+		
 		@donor = Donor.find(id)
 		success_message = { message: "Donor id: #{id} status changed to #{status}. Was: #{@donor.account_status}" }
 		failure_message = { error: "Donor id: #{id} status not changed to #{status}.  Remained: #{@donor.account_status}" }
-
+		
 		case status
 		when 'approved'
 			success = @donor.update_attribute(:account_status, 'approved')
@@ -42,12 +44,12 @@ class DonorsController < ApplicationController
 		when 'suspended'
 			success = @donor.update_attribute(:account_status, 'suspended')
 		end
-
+		
 		success ?
-			(render json: success_message, status: :updated) :
-			(render json: failure_message, status: :unprocessable_entity)
+		(render json: success_message, status: :updated) :
+		(render json: failure_message, status: :unprocessable_entity)
 	end
-
+	
 	def update
 		@donor = Donor.find(params[:id])
 		if @donor.update(donor_params)
@@ -58,7 +60,7 @@ class DonorsController < ApplicationController
 			render json: failure_message
 		end
 	end
-
+	
 	def scan_qr_code
 		claim = JSON.parse(Base64.decode64(params[:qr_code]))
 		@claim = Claim.find_by(client_id: claim.client_id, donation_id: claim.donation_id)
@@ -75,9 +77,9 @@ class DonorsController < ApplicationController
 			render json: { error: 'claim not found' }, status: :unprocessable_entity
 		end
 	end
-
+	
 	private
-
+	
 	def donor_params
 		params.require(:donor).permit(
 			:id,
